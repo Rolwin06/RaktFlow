@@ -1,0 +1,88 @@
+import type { BloodRequest } from '@/types/request';
+
+const now = new Date();
+const minutesAgo = (m: number) => new Date(now.getTime() - m * 60 * 1000).toISOString();
+
+export const seedRequests: BloodRequest[] = [
+  {
+    id: 'req-101',
+    requesterId: 'hosp-001',
+    requesterName: 'District General Hospital',
+    requesterType: 'hospital',
+    bloodGroup: 'B+',
+    component: 'Platelets',
+    unitsNeeded: 2,
+    urgency: 'emergency',
+    latitude: 12.9680,
+    longitude: 77.5990,
+    location: '15 Victoria Road, Central Bangalore',
+    status: 'matched',
+    matchedBankId: 'bank-001',
+    matchedBankName: 'City Blood Bank',
+    escalationHistory: [
+      {
+        bankId: 'bank-001',
+        bankName: 'City Blood Bank',
+        status: 'sent',
+        reason: 'Rank #1: 4 transferable units, fresh stock, expires in 18h',
+        timestamp: minutesAgo(8),
+      },
+    ],
+    createdAt: minutesAgo(10),
+    updatedAt: minutesAgo(2),
+  },
+  {
+    id: 'req-102',
+    requesterId: 'hosp-002',
+    requesterName: 'Apollo Hospitals',
+    requesterType: 'hospital',
+    bloodGroup: 'O-',
+    component: 'RBC',
+    unitsNeeded: 3,
+    urgency: 'critical',
+    latitude: 12.8950,
+    longitude: 77.5970,
+    location: '154/11 Bannerghatta Road',
+    status: 'accepted',
+    matchedBankId: 'bank-001',
+    matchedBankName: 'City Blood Bank',
+    escalationHistory: [
+      {
+        bankId: 'bank-001',
+        bankName: 'City Blood Bank',
+        status: 'accepted',
+        reason: '3 transferable units allocated',
+        timestamp: minutesAgo(25),
+      },
+    ],
+    createdAt: minutesAgo(30),
+    updatedAt: minutesAgo(15),
+  },
+  {
+    id: 'req-103',
+    requesterId: 'hosp-003',
+    requesterName: 'Fortis Hospital',
+    requesterType: 'hospital',
+    bloodGroup: 'A+',
+    component: 'RBC',
+    unitsNeeded: 4,
+    urgency: 'urgent',
+    latitude: 12.9850,
+    longitude: 77.5850,
+    location: '14 Cunningham Road',
+    status: 'preparing',
+    matchedBankId: 'bank-005',
+    matchedBankName: 'Red Cross Blood Bank',
+    escalationHistory: [
+      {
+        bankId: 'bank-005',
+        bankName: 'Red Cross Blood Bank',
+        status: 'accepted',
+        reason: 'Direct match with high surplus',
+        timestamp: minutesAgo(40),
+      },
+    ],
+    createdAt: minutesAgo(45),
+    updatedAt: minutesAgo(20),
+  },
+];
