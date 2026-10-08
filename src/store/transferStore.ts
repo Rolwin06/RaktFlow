@@ -189,16 +189,9 @@ export const useTransferStore = create<TransferState>((set, get) => ({
       ),
     }));
 
-    // Update impact statistics
-    useSimulationStore.getState().incrementUnitsSaved(transfer.units);
-    useSimulationStore.getState().incrementShortagesPrevented();
-    if (transfer.sourceExpiryHours && transfer.sourceExpiryHours <= 36) {
-      useSimulationStore.getState().incrementWastagePrevented(transfer.units);
-    }
-
     useSimulationStore.getState().addEvent({
       type: 'transfer_completed',
-      message: `Transfer ${id} completed! ${transfer.units} units successfully delivered to ${transfer.destinationBankName}. (+${transfer.units} Units Saved)`,
+      message: `Transfer ${id} completed! ${transfer.units} units successfully delivered to ${transfer.destinationBankName}.`,
       timestamp: new Date().toISOString(),
     });
   },

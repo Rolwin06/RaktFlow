@@ -8,17 +8,14 @@ import { LandingPage } from '@/pages/landing/LandingPage';
 // Requester
 import { EmergencyRequestPage } from '@/pages/requester/EmergencyRequestPage';
 import { MatchResultsPage } from '@/pages/requester/MatchResultsPage';
-import { RequestTrackingPage } from '@/pages/requester/RequestTrackingPage';
 import { DonorFallbackPage } from '@/pages/requester/DonorFallbackPage';
 
 // Blood Bank
-import { BloodBankOverview } from '@/pages/blood-bank/BloodBankOverview';
 import { InventoryPage } from '@/pages/blood-bank/InventoryPage';
 import { RequestsPage } from '@/pages/blood-bank/RequestsPage';
 import { TransfersPage } from '@/pages/blood-bank/TransfersPage';
 import { DonorsPage } from '@/pages/blood-bank/DonorsPage';
 import { EmergencySharingPage } from '@/pages/blood-bank/EmergencySharingPage';
-import { AuditLogPage } from '@/pages/blood-bank/AuditLogPage';
 
 // Admin / Judge
 import { AdminDashboard } from '@/pages/admin/AdminDashboard';
@@ -26,47 +23,49 @@ import { NetworkMapPage } from '@/pages/admin/NetworkMapPage';
 import { ShortageIntelligencePage } from '@/pages/admin/ShortageIntelligencePage';
 import { ExpiryRiskPage } from '@/pages/admin/ExpiryRiskPage';
 import { AnalyticsPage } from '@/pages/admin/AnalyticsPage';
-import { SimulationPage } from '@/pages/admin/SimulationPage';
 
 export const router = createBrowserRouter([
-  // Public Landing Page (Standalone layout)
+  // Public Landing Page (standalone layout)
   {
     path: '/',
     element: <LandingPage />,
   },
 
-  // Authenticated / Operational Layout with AppShell (Sidebar + Topbar)
+  // Operational layout with AppShell (Sidebar + Topbar)
   {
     element: <AppShell />,
     children: [
-      // Requester Experience
+      // ── Requester / Hospital ──────────────────────────────────────────────
       {
         path: '/request',
         children: [
-          { index: true, element: <RequestTrackingPage /> },
+          { index: true, element: <Navigate to="/request/new" replace /> },
           { path: 'new', element: <EmergencyRequestPage /> },
           { path: 'results', element: <MatchResultsPage /> },
-          { path: 'tracking', element: <RequestTrackingPage /> },
           { path: 'donors', element: <DonorFallbackPage /> },
+          // Old tracking route redirects to emergency request
+          { path: 'tracking', element: <Navigate to="/request/new" replace /> },
         ],
       },
 
-      // Blood Bank Portal
+      // ── Blood Bank Portal ─────────────────────────────────────────────────
       {
         path: '/bank',
         children: [
-          { index: true, element: <Navigate to="/bank/overview" replace /> },
-          { path: 'overview', element: <BloodBankOverview /> },
+          { index: true, element: <Navigate to="/bank/inventory" replace /> },
+          // Old overview route redirects to inventory (the main view)
+          { path: 'overview', element: <Navigate to="/bank/inventory" replace /> },
           { path: 'inventory', element: <InventoryPage /> },
           { path: 'requests', element: <RequestsPage /> },
           { path: 'transfers', element: <TransfersPage /> },
           { path: 'donors', element: <DonorsPage /> },
           { path: 'emergency', element: <EmergencySharingPage /> },
-          { path: 'audit', element: <AuditLogPage /> },
+          // Old audit route redirects to inventory
+          { path: 'audit', element: <Navigate to="/bank/inventory" replace /> },
         ],
       },
 
-      // Admin & Judge Center
+      // ── Admin & Judge Center ──────────────────────────────────────────────
       {
         path: '/admin',
         children: [
@@ -77,13 +76,14 @@ export const router = createBrowserRouter([
           { path: 'expiry', element: <ExpiryRiskPage /> },
           { path: 'transfers', element: <TransfersPage /> },
           { path: 'analytics', element: <AnalyticsPage /> },
-          { path: 'simulation', element: <SimulationPage /> },
+          // Old simulation route redirects to dashboard
+          { path: 'simulation', element: <Navigate to="/admin/overview" replace /> },
         ],
       },
     ],
   },
 
-  // Fallback
+  // Catch-all fallback
   {
     path: '*',
     element: <Navigate to="/" replace />,

@@ -1,112 +1,60 @@
+/**
+ * eventLogStore — lightweight network event log.
+ * Replaces the former simulationStore after removal of Demo/Simulation mode.
+ * Keeps `addEvent` and `events` so requestStore / transferStore / EmergencySharingPage
+ * continue to work unchanged.
+ */
 import { create } from 'zustand';
 
-export interface SimulationEvent {
+export interface NetworkEvent {
   id: string;
   type: string;
   message: string;
   timestamp: string;
 }
 
-interface SimulationState {
-  simulationTime: Date;
-  isRunning: boolean;
-  unitsSaved: number;
-  shortagesPrevented: number;
-  wastagePrevented: number;
-  events: SimulationEvent[];
-
-  // Actions
-  toggleRunning: () => void;
-  fastForwardHours: (hours: number) => void;
-  addEvent: (event: Omit<SimulationEvent, 'id'>) => void;
-  incrementUnitsSaved: (units: number) => void;
-  incrementShortagesPrevented: () => void;
-  incrementWastagePrevented: (units: number) => void;
-  resetSimulation: () => void;
+interface EventLogState {
+  events: NetworkEvent[];
+  addEvent: (event: Omit<NetworkEvent, 'id'>) => void;
+  clearEvents: () => void;
 }
 
-export const useSimulationStore = create<SimulationState>((set) => ({
-  simulationTime: new Date(),
-  isRunning: true,
-  unitsSaved: 23,
-  shortagesPrevented: 3,
-  wastagePrevented: 17,
+export const useEventLogStore = create<EventLogState>((set) => ({
   events: [
     {
-      id: 'evt-1',
+      id: 'evt-init-1',
       type: 'system',
-      message: 'RaktFlow Network Control Center operational. 8 Blood Banks connected.',
+      message: 'RaktFlow network connected. 8 blood banks synced from Supabase.',
       timestamp: new Date(Date.now() - 30 * 60 * 1000).toISOString(),
     },
     {
-      id: 'evt-2',
+      id: 'evt-init-2',
       type: 'algorithm',
-      message: 'LifeLine Blood Bank inventory unconfirmed for 14h — penalized in ranking.',
-      timestamp: new Date(Date.now() - 25 * 60 * 1000).toISOString(),
+      message: 'Confidence decay scan complete. Stale records flagged for re-confirmation.',
+      timestamp: new Date(Date.now() - 20 * 60 * 1000).toISOString(),
     },
     {
-      id: 'evt-3',
+      id: 'evt-init-3',
       type: 'redistribution',
-      message: 'Surplus detected at City Blood Bank (B+ Platelets, 18h expiry). Target: District BC.',
-      timestamp: new Date(Date.now() - 20 * 60 * 1000).toISOString(),
+      message: 'FEFO surplus detected at City Blood Bank. Redistribution candidate queued.',
+      timestamp: new Date(Date.now() - 10 * 60 * 1000).toISOString(),
     },
   ],
 
-  toggleRunning: () => set((state) => ({ isRunning: !state.isRunning })),
-
-  fastForwardHours: (hours: number) => {
-    set((state) => {
-      const newTime = new Date(state.simulationTime.getTime() + hours * 60 * 60 * 1000);
-      return {
-        simulationTime: newTime,
-        events: [
-          {
-            id: `evt-${Date.now()}`,
-            type: 'clock',
-            message: `Fast-forwarded clock by ${hours} hour(s) to ${newTime.toLocaleTimeString()}`,
-            timestamp: newTime.toISOString(),
-          },
-          ...state.events,
-        ],
-      };
-    });
-  },
-
-  addEvent: (evt) => {
+  addEvent: (evt) =>
     set((state) => ({
       events: [
         {
           ...evt,
           id: `evt-${Date.now()}-${Math.random().toString(36).slice(2, 5)}`,
         },
-        ...state.events.slice(0, 49), // retain last 50
+        ...state.events.slice(0, 49),
       ],
-    }));
-  },
+    })),
 
-  incrementUnitsSaved: (units) =>
-    set((state) => ({ unitsSaved: state.unitsSaved + units })),
-
-  incrementShortagesPrevented: () =>
-    set((state) => ({ shortagesPrevented: state.shortagesPrevented + 1 })),
-
-  incrementWastagePrevented: (units) =>
-    set((state) => ({ wastagePrevented: state.wastagePrevented + units })),
-
-  resetSimulation: () =>
-    set({
-      simulationTime: new Date(),
-      isRunning: true,
-      unitsSaved: 23,
-      shortagesPrevented: 3,
-      wastagePrevented: 17,
-      events: [
-        {
-          id: `evt-${Date.now()}`,
-          type: 'system',
-          message: 'Simulation reset to baseline state.',
-          timestamp: new Date().toISOString(),
-        },
-      ],
-    }),
+  clearEvents: () => set({ events: [] }),
 }));
+
+// ─── Backward-compat shim ────────────────────────────────────────────────────
+// Re-export as useSimulationStore so existing imports don't break during migration.
+export const useSimulationStore = useEventLogStore;

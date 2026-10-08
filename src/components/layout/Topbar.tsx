@@ -1,29 +1,27 @@
 import React from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Activity, Clock, CheckCircle2, ShieldAlert } from 'lucide-react';
+import { Activity, CheckCircle2, ShieldAlert } from 'lucide-react';
 import { useNetworkStore } from '@/store/networkStore';
-import { useSimulationStore } from '@/store/simulationStore';
-import { formatClockTime, formatTimeAgo } from '@/utils/date';
+import { formatTimeAgo } from '@/utils/date';
 import { Button } from '@/components/ui/Button';
 
 export const Topbar: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { bloodBanks, currentBankId, setCurrentBankId, confirmBankStock } = useNetworkStore();
-  const { simulationTime, isRunning, toggleRunning, fastForwardHours } = useSimulationStore();
 
   const currentBank = bloodBanks.find((b) => b.id === currentBankId) || bloodBanks[0];
   const isBankPortal = location.pathname.startsWith('/bank');
 
   const handleConfirmStock = () => {
-    confirmBankStock(currentBank.id);
+    if (currentBank) confirmBankStock(currentBank.id);
   };
 
   return (
     <header className="sticky top-0 z-30 bg-white/95 backdrop-blur-xs border-b border-surface-200/80 px-4 sm:px-6 py-2.5 flex items-center justify-between gap-4">
       {/* Left side: Context badge */}
       <div className="flex items-center gap-3">
-        {isBankPortal ? (
+        {isBankPortal && currentBank ? (
           <div className="flex items-center gap-2">
             <span className="text-xs font-semibold uppercase tracking-wider text-surface-400">
               Active Facility:
@@ -66,30 +64,10 @@ export const Topbar: React.FC = () => {
         )}
       </div>
 
-      {/* Right side: Simulation Clock & Quick Actions */}
+      {/* Right side: Quick Actions */}
       <div className="flex items-center gap-2 sm:gap-3">
-        {/* Simulation Clock Indicator */}
-        <div className="flex items-center gap-1.5 bg-surface-100 border border-surface-200 px-3 py-1 rounded-md text-xs font-mono text-surface-700">
-          <Clock className="w-3.5 h-3.5 text-surface-500" />
-          <span className="font-semibold">{formatClockTime(simulationTime)}</span>
-          <button
-            onClick={toggleRunning}
-            title={isRunning ? 'Pause Simulation' : 'Resume Simulation'}
-            className="ml-1 text-[10px] px-1 bg-surface-200 rounded text-surface-600 hover:text-surface-900 cursor-pointer"
-          >
-            {isRunning ? '⏸' : '▶'}
-          </button>
-          <button
-            onClick={() => fastForwardHours(2)}
-            title="Fast forward 2 hours to test expiry and demand spikes"
-            className="text-[10px] px-1 bg-surface-200 rounded text-surface-600 hover:text-surface-900 cursor-pointer font-sans"
-          >
-            +2h
-          </button>
-        </div>
-
         {/* Quick stock verification CTA if in bank view */}
-        {isBankPortal && (
+        {isBankPortal && currentBank && (
           <Button
             size="sm"
             variant={currentBank.freshnessStatus === 'stale' ? 'danger' : 'outline'}
