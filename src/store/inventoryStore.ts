@@ -9,6 +9,7 @@ interface InventoryState {
   setSelectedInventory: (record: InventoryRecord | null) => void;
 
   // Actions
+  hydrate: (records: InventoryRecord[]) => void;
   confirmStock: (id: string) => void;
   reserveStock: (id: string, units: number) => boolean;
   releaseStock: (id: string, units: number) => void;
@@ -22,6 +23,8 @@ export const useInventoryStore = create<InventoryState>((set, get) => ({
   selectedInventory: null,
 
   setSelectedInventory: (record) => set({ selectedInventory: record }),
+
+  hydrate: (records) => set({ inventory: records }),
 
   confirmStock: (id) => {
     set((state) => ({
