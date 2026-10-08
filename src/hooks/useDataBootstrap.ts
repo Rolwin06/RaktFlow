@@ -2,14 +2,16 @@
  * useDataBootstrap
  *
  * Runs once at app startup to hydrate all Zustand stores with live
- * data from Supabase. Falls back to synthetic seed data automatically
- * if Supabase is unreachable or the tables are empty.
+ * data from Supabase. Sets up real-time postgres_changes listeners
+ * for live multi-operator syncing. Falls back to synthetic seed data
+ * automatically if Supabase is unreachable.
  */
 import { useEffect, useRef, useState } from 'react';
 import { fetchBloodBanksFromDb } from '@/services/api/bloodBanksApi';
-import { fetchInventoryFromDb } from '@/services/api/inventoryApi';
+import { fetchInventoryFromDb, mapDbRowToInventoryRecord } from '@/services/api/inventoryApi';
 import { fetchRequestsFromDb } from '@/services/api/requestsApi';
 import { fetchTransfersFromDb } from '@/services/api/transfersApi';
+import { supabase, isSupabaseConfigured } from '@/services/supabase/client';
 import { useNetworkStore } from '@/store/networkStore';
 import { useInventoryStore } from '@/store/inventoryStore';
 import { useRequestStore } from '@/store/requestStore';
@@ -58,6 +60,34 @@ export function useDataBootstrap() {
     };
 
     load();
+
+    // Setup Supabase Realtime subscription for live inventory updates
+    if (isSupabaseConfigured) {
+      const channel = supabase
+        .channel('realtime:inventory')
+        .on(
+          'postgres_changes',
+          { event: '*', schema: 'public', table: 'inventory' },
+          (payload) => {
+            if (payload.eventType === 'INSERT' || payload.eventType === 'UPDATE') {
+              const record = mapDbRowToInventoryRecord(payload.new as Record<string, unknown>);
+              useInventoryStore.getState().upsertRecord(record);
+            } else if (payload.eventType === 'DELETE') {
+              const deletedId = (payload.old as { id: string })?.id;
+              if (deletedId) {
+                useInventoryStore.setState((state) => ({
+                  inventory: state.inventory.filter((i) => i.id !== deletedId),
+                }));
+              }
+            }
+          }
+        )
+        .subscribe();
+
+      return () => {
+        supabase.removeChannel(channel);
+      };
+    }
   }, []);
 
   return { status, error };

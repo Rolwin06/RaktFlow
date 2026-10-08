@@ -268,26 +268,6 @@ export const AdminDashboard: React.FC = () => {
             </div>
             <ArrowRight className="w-4 h-4 text-surface-400 group-hover:translate-x-1 transition-transform" />
           </div>
-
-          <div
-            onClick={() => navigate('/admin/transfers')}
-            className="bg-white border border-surface-200 hover:border-emerald-300 p-4 rounded-xl shadow-xs transition-all cursor-pointer flex items-center justify-between group"
-          >
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-emerald-50 text-emerald-700 flex items-center justify-center group-hover:bg-emerald-600 group-hover:text-white transition-colors">
-                <ArrowRightLeft className="w-5 h-5" />
-              </div>
-              <div>
-                <h4 className="text-sm font-bold text-surface-900 group-hover:text-emerald-700 transition-colors">
-                  Network Transfers
-                </h4>
-                <p className="text-xs text-surface-500 mt-0.5">
-                  Approve, track, and manage all inter-bank blood redistribution
-                </p>
-              </div>
-            </div>
-            <ArrowRight className="w-4 h-4 text-surface-400 group-hover:translate-x-1 transition-transform" />
-          </div>
         </div>
       </div>
     </div>

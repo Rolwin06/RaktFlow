@@ -58,3 +58,28 @@ export async function createRequestInDb(req: BloodRequest): Promise<boolean> {
 
   return !error;
 }
+
+export async function updateRequestStatusInDb(
+  requestId: string,
+  status: BloodRequest['status'],
+  matchedBankId?: string,
+  matchedBankName?: string
+): Promise<boolean> {
+  if (!isSupabaseConfigured) return true;
+
+  const now = new Date().toISOString();
+  const updatePayload: Record<string, unknown> = {
+    status,
+    updated_at: now,
+  };
+  if (matchedBankId) updatePayload.matched_bank_id = matchedBankId;
+  if (matchedBankName) updatePayload.matched_bank_name = matchedBankName;
+  if (status === 'completed' || status === 'accepted') updatePayload.completed_at = now;
+
+  const { error } = await supabase
+    .from('requests')
+    .update(updatePayload)
+    .eq('id', requestId);
+
+  return !error;
+}

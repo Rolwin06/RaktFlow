@@ -177,21 +177,33 @@ ALTER TABLE public.transfers ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.donors ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.audit_logs ENABLE ROW LEVEL SECURITY;
 
--- Permissive public read & insert policies for hackathon demonstration
+-- Permissive public read, insert, update, and delete policies
 CREATE POLICY "Public read blood_banks" ON public.blood_banks FOR SELECT USING (true);
+CREATE POLICY "Public insert blood_banks" ON public.blood_banks FOR INSERT WITH CHECK (true);
 CREATE POLICY "Public update blood_banks" ON public.blood_banks FOR UPDATE USING (true);
+CREATE POLICY "Public delete blood_banks" ON public.blood_banks FOR DELETE USING (true);
 
 CREATE POLICY "Public read inventory" ON public.inventory FOR SELECT USING (true);
+CREATE POLICY "Public insert inventory" ON public.inventory FOR INSERT WITH CHECK (true);
 CREATE POLICY "Public update inventory" ON public.inventory FOR UPDATE USING (true);
+CREATE POLICY "Public delete inventory" ON public.inventory FOR DELETE USING (true);
 
 CREATE POLICY "Public read requests" ON public.requests FOR SELECT USING (true);
 CREATE POLICY "Public insert requests" ON public.requests FOR INSERT WITH CHECK (true);
 CREATE POLICY "Public update requests" ON public.requests FOR UPDATE USING (true);
+CREATE POLICY "Public delete requests" ON public.requests FOR DELETE USING (true);
 
 CREATE POLICY "Public read transfers" ON public.transfers FOR SELECT USING (true);
 CREATE POLICY "Public insert transfers" ON public.transfers FOR INSERT WITH CHECK (true);
 CREATE POLICY "Public update transfers" ON public.transfers FOR UPDATE USING (true);
+CREATE POLICY "Public delete transfers" ON public.transfers FOR DELETE USING (true);
 
 CREATE POLICY "Public read donors" ON public.donors FOR SELECT USING (true);
+CREATE POLICY "Public insert donors" ON public.donors FOR INSERT WITH CHECK (true);
+CREATE POLICY "Public update donors" ON public.donors FOR UPDATE USING (true);
+CREATE POLICY "Public delete donors" ON public.donors FOR DELETE USING (true);
+
 CREATE POLICY "Public read audit_logs" ON public.audit_logs FOR SELECT USING (true);
 CREATE POLICY "Public insert audit_logs" ON public.audit_logs FOR INSERT WITH CHECK (true);
+CREATE POLICY "Public update audit_logs" ON public.audit_logs FOR UPDATE USING (true);
+CREATE POLICY "Public delete audit_logs" ON public.audit_logs FOR DELETE USING (true);

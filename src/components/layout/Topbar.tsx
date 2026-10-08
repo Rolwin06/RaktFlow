@@ -1,7 +1,8 @@
 import React from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Activity, CheckCircle2, ShieldAlert } from 'lucide-react';
+import { Activity, CheckCircle2, ShieldAlert, LogOut, Building2, ShieldCheck, LayoutDashboard } from 'lucide-react';
 import { useNetworkStore } from '@/store/networkStore';
+import { useAuthStore } from '@/store/authStore';
 import { formatTimeAgo } from '@/utils/date';
 import { Button } from '@/components/ui/Button';
 
@@ -9,12 +10,20 @@ export const Topbar: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { bloodBanks, currentBankId, setCurrentBankId, confirmBankStock } = useNetworkStore();
+  const { user, userRole, assignedBankId, signOut } = useAuthStore();
 
-  const currentBank = bloodBanks.find((b) => b.id === currentBankId) || bloodBanks[0];
-  const isBankPortal = location.pathname.startsWith('/bank');
+  const isOwner = userRole === 'owner';
+  const effectiveBankId = isOwner ? currentBankId : (assignedBankId || currentBankId);
+  const currentBank = bloodBanks.find((b) => b.id === effectiveBankId) || bloodBanks[0];
+  const isBankPortal = location.pathname.startsWith('/bank') || location.pathname.startsWith('/owner');
 
   const handleConfirmStock = () => {
     if (currentBank) confirmBankStock(currentBank.id);
+  };
+
+  const handleSignOut = async () => {
+    await signOut();
+    navigate('/login', { replace: true });
   };
 
   return (
@@ -24,19 +33,41 @@ export const Topbar: React.FC = () => {
         {isBankPortal && currentBank ? (
           <div className="flex items-center gap-2">
             <span className="text-xs font-semibold uppercase tracking-wider text-surface-400">
-              Active Facility:
+              {isOwner ? 'Active Facility:' : 'Assigned Facility:'}
             </span>
-            <select
-              value={currentBankId}
-              onChange={(e) => setCurrentBankId(e.target.value)}
-              className="text-xs font-semibold text-surface-900 bg-surface-100 border border-surface-300 rounded px-2.5 py-1 focus:outline-none focus:ring-1 focus:ring-red-500 cursor-pointer"
-            >
-              {bloodBanks.map((b) => (
-                <option key={b.id} value={b.id}>
-                  {b.name} ({b.confidenceScore}% trust)
-                </option>
-              ))}
-            </select>
+
+            {isOwner ? (
+              /* Multi-Bank Owner can switch facility freely */
+              <div className="flex items-center gap-2">
+                <select
+                  value={currentBankId}
+                  onChange={(e) => setCurrentBankId(e.target.value)}
+                  className="text-xs font-bold text-surface-900 bg-surface-100 border border-surface-300 rounded px-2.5 py-1 focus:outline-none focus:ring-1 focus:ring-red-500 cursor-pointer"
+                >
+                  {bloodBanks.map((b) => (
+                    <option key={b.id} value={b.id}>
+                      {b.name} ({b.confidenceScore}% trust)
+                    </option>
+                  ))}
+                </select>
+
+                <Button
+                  size="sm"
+                  variant="outline"
+                  leftIcon={<LayoutDashboard className="w-3.5 h-3.5 text-red-600" />}
+                  onClick={() => navigate('/bank/owner-dashboard')}
+                  className="hidden md:inline-flex text-xs py-1"
+                >
+                  Owner Command Center
+                </Button>
+              </div>
+            ) : (
+              /* Single-Bank Operator is locked to their designated facility */
+              <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded bg-surface-100 border border-surface-200 text-surface-900 text-xs font-bold font-mono">
+                <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
+                <span>{currentBank.name} ({currentBank.shortName})</span>
+              </div>
+            )}
 
             <span className="hidden sm:inline-flex items-center gap-1.5 text-xs text-surface-500 ml-2">
               <span
@@ -64,8 +95,23 @@ export const Topbar: React.FC = () => {
         )}
       </div>
 
-      {/* Right side: Quick Actions */}
+      {/* Right side: Quick Actions & Role Indicator */}
       <div className="flex items-center gap-2 sm:gap-3">
+        {/* Role Badge */}
+        <div className="hidden lg:flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold border bg-surface-50 text-surface-700 border-surface-200">
+          {isOwner ? (
+            <>
+              <Building2 className="w-3 h-3 text-red-600" />
+              <span className="text-red-700">Multi-Bank Owner</span>
+            </>
+          ) : (
+            <>
+              <ShieldCheck className="w-3 h-3 text-emerald-600" />
+              <span className="text-emerald-700">Single-Bank Operator</span>
+            </>
+          )}
+        </div>
+
         {/* Quick stock verification CTA if in bank view */}
         {isBankPortal && currentBank && (
           <Button
@@ -88,6 +134,22 @@ export const Topbar: React.FC = () => {
         >
           Emergency Request
         </Button>
+
+        {/* User avatar + sign-out */}
+        <div className="flex items-center gap-2 pl-2 border-l border-surface-200">
+          <div className="w-7 h-7 rounded-full bg-red-100 border border-red-200 flex items-center justify-center">
+            <span className="text-[10px] font-bold text-red-700 uppercase">
+              {user?.email?.[0] ?? (isOwner ? 'O' : 'U')}
+            </span>
+          </div>
+          <button
+            onClick={handleSignOut}
+            title="Sign out"
+            className="text-surface-400 hover:text-red-600 transition-colors cursor-pointer p-1"
+          >
+            <LogOut className="w-4 h-4" />
+          </button>
+        </div>
       </div>
     </header>
   );

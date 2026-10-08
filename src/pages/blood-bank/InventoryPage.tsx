@@ -22,6 +22,7 @@ import { Modal } from '@/components/ui/Modal';
 import { BloodGroupBadge } from '@/components/blood/BloodGroupBadge';
 import { ComponentBadge } from '@/components/blood/ComponentBadge';
 import { ProtectedStockBar } from '@/components/blood/ProtectedStockBar';
+import { AddInventoryModal } from '@/components/blood/AddInventoryModal';
 
 export const InventoryPage: React.FC = () => {
   const { bloodBanks, currentBankId, confirmBankStock } = useNetworkStore();
@@ -29,6 +30,7 @@ export const InventoryPage: React.FC = () => {
 
   const [selectedRecord, setSelectedRecord] = useState<InventoryRecord | null>(null);
   const [filterComponent, setFilterComponent] = useState<string>('all');
+  const [isAddModalOpen, setIsAddModalOpen] = useState<boolean>(false);
 
   const currentBank = bloodBanks.find((b) => b.id === currentBankId) || bloodBanks[0];
   const bankInventory = inventory.filter((inv) => {
@@ -86,6 +88,15 @@ export const InventoryPage: React.FC = () => {
             onClick={() => confirmBankStock(currentBank.id)}
           >
             Confirm Entire Facility
+          </Button>
+
+          <Button
+            size="sm"
+            variant="primary"
+            leftIcon={<Plus className="w-4 h-4" />}
+            onClick={() => setIsAddModalOpen(true)}
+          >
+            Add / Update Stock
           </Button>
         </div>
       </div>
@@ -304,6 +315,27 @@ export const InventoryPage: React.FC = () => {
           </div>
         </Modal>
       )}
+
+      {/* Floating Action Button (Plus sign at bottom right) */}
+      <div className="fixed bottom-6 right-6 z-40">
+        <button
+          onClick={() => setIsAddModalOpen(true)}
+          className="flex items-center gap-2.5 bg-red-600 hover:bg-red-700 active:bg-red-800 text-white px-5 py-3.5 rounded-full shadow-xl shadow-red-900/25 hover:shadow-red-600/30 ring-4 ring-red-500/20 hover:ring-red-500/30 active:scale-95 transition-all duration-200 cursor-pointer group font-semibold"
+          title="Add or Update Blood Inventory"
+        >
+          <div className="w-6 h-6 rounded-full bg-white/25 flex items-center justify-center transition-transform duration-300 group-hover:rotate-90">
+            <Plus className="w-4 h-4 text-white stroke-[2.5]" />
+          </div>
+          <span className="text-xs font-bold tracking-wide">Add / Update Stock</span>
+        </button>
+      </div>
+
+      {/* Add / Update Inventory Management Modal */}
+      <AddInventoryModal
+        isOpen={isAddModalOpen}
+        onClose={() => setIsAddModalOpen(false)}
+        defaultBankId={currentBank.id}
+      />
     </div>
   );
 };

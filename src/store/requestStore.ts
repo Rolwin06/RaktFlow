@@ -3,6 +3,8 @@ import { seedRequests } from '@/data/seed/requests';
 import type { BloodRequest, RequestOffer } from '@/types/request';
 import { useInventoryStore } from './inventoryStore';
 import { useSimulationStore } from './simulationStore';
+import { deductInventoryUnitsInDb } from '@/services/api/inventoryApi';
+import { updateRequestStatusInDb } from '@/services/api/requestsApi';
 
 interface RequestState {
   requests: BloodRequest[];
@@ -52,7 +54,7 @@ export const useRequestStore = create<RequestState>((set, get) => ({
   },
 
   acceptOffer: (requestId, offer) => {
-    // 1. Reserve inventory at the source bank
+    // 1. Deduct inventory at the source bank immediately and sync to Supabase
     const invState = useInventoryStore.getState();
     const invItem = invState.inventory.find(
       (inv) =>
@@ -62,8 +64,10 @@ export const useRequestStore = create<RequestState>((set, get) => ({
     );
 
     if (invItem) {
-      invState.reserveStock(invItem.id, offer.offeredUnits);
+      invState.deductUnits(invItem.id, offer.offeredUnits);
+      deductInventoryUnitsInDb(offer.bankId, offer.bloodGroup, offer.component, offer.offeredUnits);
     }
+    updateRequestStatusInDb(requestId, 'accepted', offer.bankId, offer.bankName);
 
     // 2. Update request status to 'accepted'
     set((state) => ({

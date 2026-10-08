@@ -1,150 +1,115 @@
-import React from 'react';
+import React, { useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Activity,
-  ShieldAlert,
-  Building2,
-  MapPin,
-  ArrowRight,
-  Zap,
-  CheckCircle2,
-  Clock
+  Heart,
+  Droplets,
+  ArrowRight
 } from 'lucide-react';
+import { useAuthStore } from '@/store/authStore';
 
 export const LandingPage: React.FC = () => {
   const navigate = useNavigate();
+  const { user, userRole } = useAuthStore();
+  const isNavigatingRef = useRef(false);
+
+  const handleEnterApp = () => {
+    if (isNavigatingRef.current) return;
+    isNavigatingRef.current = true;
+
+    if (user) {
+      if (userRole === 'owner') {
+        navigate('/bank/owner-dashboard');
+      } else {
+        navigate('/bank/inventory');
+      }
+    } else {
+      navigate('/login');
+    }
+  };
 
   return (
     <div className="min-h-screen bg-surface-50 text-surface-900 font-sans flex flex-col justify-between selection:bg-red-500 selection:text-white">
-      {/* Minimal Top Header */}
-      <header className="border-b border-surface-200/80 bg-white px-4 sm:px-8 py-3.5 flex items-center justify-between">
-        <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-lg bg-red-600 flex items-center justify-center text-white shadow-xs">
+      {/* Navigation Header */}
+      <header className="sticky top-0 z-50 backdrop-blur-md bg-white/90 border-b border-surface-200/80 px-4 sm:px-8 py-3.5 flex items-center justify-between transition-all">
+        <div className="flex items-center gap-2.5 cursor-pointer" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
+          <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-red-600 to-red-500 flex items-center justify-center text-white shadow-md shadow-red-500/20">
             <Activity className="w-5 h-5" />
           </div>
-          <span className="text-lg font-black tracking-tight text-surface-900">
-            RAKTFLOW
-          </span>
+          <div>
+            <span className="text-xl font-black tracking-tight bg-gradient-to-r from-red-700 via-red-600 to-red-500 bg-clip-text text-transparent">
+              RAKTFLOW
+            </span>
+            <span className="hidden sm:inline-block text-[10px] font-bold uppercase tracking-wider text-red-600/80 ml-2 px-1.5 py-0.5 rounded bg-red-50 border border-red-100">
+              Live Network
+            </span>
+          </div>
         </div>
-
-        <button
-          onClick={() => navigate('/admin/simulation')}
-          className="text-xs font-semibold px-3 py-1.5 rounded-md bg-surface-100 hover:bg-surface-200 text-surface-700 transition-colors cursor-pointer flex items-center gap-1.5"
-        >
-          <Zap className="w-3.5 h-3.5 text-amber-500" />
-          <span>Demo Mode</span>
-        </button>
       </header>
 
-      {/* Main Clean Hero Content */}
-      <main className="max-w-4xl mx-auto px-4 sm:px-6 py-10 sm:py-16 text-center my-auto w-full">
-        {/* Simple Badge */}
-        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-red-50 text-red-700 text-xs font-semibold border border-red-200 mb-6">
-          <span className="w-2 h-2 rounded-full bg-red-600 animate-pulse" />
-          Real-Time Blood Supply Network
-        </div>
+      {/* Hero Section - Full Landing View */}
+      <main className="relative flex-1 flex flex-col items-center justify-center px-4 sm:px-6 py-10 sm:py-16 bg-gradient-to-b from-sky-50/70 via-sky-100/40 to-surface-50 overflow-hidden">
+        {/* Background Ambient Glows */}
+        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[300px] bg-red-400/10 blur-[120px] rounded-full pointer-events-none" />
+        <div className="absolute bottom-10 right-10 w-[400px] h-[400px] bg-sky-300/20 blur-[100px] rounded-full pointer-events-none" />
 
-        {/* Clear Headline - No Jargon */}
-        <h1 className="text-3xl sm:text-5xl font-extrabold tracking-tight text-surface-900 leading-tight mb-4">
-          Find blood fast. <br />
-          <span className="text-red-600">Stop waste before it happens.</span>
-        </h1>
+        <div className="max-w-4xl mx-auto text-center z-10 w-full my-auto">
+          {/* Main Tagline Badge */}
+          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-red-50 border border-red-200 text-red-700 text-xs font-bold mb-6 shadow-xs">
+            <Droplets className="w-4 h-4 text-red-600 animate-pulse" />
+            <span>Real-Time Blood Inventory &amp; Emergency Response Network</span>
+          </div>
 
-        <p className="text-sm sm:text-base text-surface-600 max-w-lg mx-auto mb-10">
-          Connects 8 blood banks across a 50 km network. Automatically finds the safest, freshest blood in seconds.
-        </p>
+          {/* Title & Headline */}
+          <h1 className="text-4xl sm:text-6xl font-black tracking-tight text-surface-900 leading-[1.1] mb-5">
+            RAKTFLOW <br />
+            <span className="bg-gradient-to-r from-red-600 via-red-500 to-rose-600 bg-clip-text text-transparent">
+              Connecting Lives, Saving Seconds
+            </span>
+          </h1>
 
-        {/* 3 Main Simple Action Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-left max-w-3xl mx-auto mb-12">
-          {/* 1. Emergency Blood Request */}
+          <p className="text-base sm:text-lg text-surface-600 max-w-2xl mx-auto font-medium leading-relaxed mb-8">
+            Empowering connected blood banks with real-time stock tracking, instant emergency requests, and zero-waste automated dispatching.
+          </p>
+
+          {/* Hero Banner Illustration */}
           <div
-            onClick={() => navigate('/request/new')}
-            className="bg-white border-2 border-red-500 hover:border-red-600 rounded-xl p-5 shadow-sm hover:shadow-md transition-all cursor-pointer group flex flex-col justify-between"
+            onClick={handleEnterApp}
+            className="relative max-w-3xl mx-auto rounded-2xl overflow-hidden shadow-2xl border-4 border-white/80 bg-sky-100 mb-8 cursor-pointer group hover:scale-[1.01] transition-transform duration-500"
           >
-            <div>
-              <div className="w-10 h-10 rounded-lg bg-red-50 text-red-600 flex items-center justify-center mb-3">
-                <ShieldAlert className="w-5 h-5" />
-              </div>
-              <h2 className="text-base font-bold text-surface-900 group-hover:text-red-600 transition-colors">
-                I Need Blood
-              </h2>
-              <p className="text-xs text-surface-500 mt-1">
-                Fast emergency search. No login required.
-              </p>
-            </div>
-            <div className="mt-4 pt-3 border-t border-surface-100 flex items-center justify-between text-xs font-bold text-red-600">
-              <span>Start Request</span>
-              <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+            <img
+              src="/hero_illustration.jpg"
+              alt="RaktFlow Blood Network Illustration"
+              className="w-full h-auto max-h-[380px] object-cover object-center"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-60" />
+            <div className="absolute bottom-4 left-6 right-6 flex items-center justify-between text-white font-medium text-xs sm:text-sm">
+              <span className="flex items-center gap-1.5 font-bold tracking-wide">
+                <Heart className="w-4 h-4 text-red-400 fill-current animate-pulse" />
+                Live 50km Integrated Blood Network
+              </span>
+              <span className="bg-black/40 backdrop-blur-md px-3 py-1 rounded-full text-[11px] border border-white/20">
+                8 Facilities Connected
+              </span>
             </div>
           </div>
 
-          {/* 2. Blood Bank Staff */}
-          <div
-            onClick={() => navigate('/bank/overview')}
-            className="bg-white border border-surface-200 hover:border-surface-400 rounded-xl p-5 shadow-sm hover:shadow-md transition-all cursor-pointer group flex flex-col justify-between"
-          >
-            <div>
-              <div className="w-10 h-10 rounded-lg bg-surface-100 text-surface-700 flex items-center justify-center mb-3">
-                <Building2 className="w-5 h-5" />
-              </div>
-              <h2 className="text-base font-bold text-surface-900 group-hover:text-surface-900 transition-colors">
-                Blood Bank Portal
-              </h2>
-              <p className="text-xs text-surface-500 mt-1">
-                Manage stock, expiry, and approve transfers.
-              </p>
-            </div>
-            <div className="mt-4 pt-3 border-t border-surface-100 flex items-center justify-between text-xs font-semibold text-surface-700">
-              <span>Open Portal</span>
+          {/* Enter Portal Action Button */}
+          <div className="z-10 pt-2 flex flex-col items-center">
+            <button
+              onClick={handleEnterApp}
+              className="group flex items-center gap-2.5 font-bold text-sm px-7 py-3.5 rounded-2xl bg-red-600 hover:bg-red-700 text-white shadow-xl shadow-red-600/30 transition-all cursor-pointer hover:scale-105"
+            >
+              <span>{user ? 'Enter Main Dashboard' : 'Enter Portal / Sign In'}</span>
               <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-            </div>
-          </div>
-
-          {/* 3. Live Map & Admin */}
-          <div
-            onClick={() => navigate('/admin/network')}
-            className="bg-white border border-surface-200 hover:border-surface-400 rounded-xl p-5 shadow-sm hover:shadow-md transition-all cursor-pointer group flex flex-col justify-between"
-          >
-            <div>
-              <div className="w-10 h-10 rounded-lg bg-surface-100 text-surface-700 flex items-center justify-center mb-3">
-                <MapPin className="w-5 h-5" />
-              </div>
-              <h2 className="text-base font-bold text-surface-900 group-hover:text-surface-900 transition-colors">
-                Live 50km Map
-              </h2>
-              <p className="text-xs text-surface-500 mt-1">
-                See all connected blood banks and routes.
-              </p>
-            </div>
-            <div className="mt-4 pt-3 border-t border-surface-100 flex items-center justify-between text-xs font-semibold text-surface-700">
-              <span>View Map</span>
-              <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-            </div>
-          </div>
-        </div>
-
-        {/* Ultra-Simple 3-Step Flow (Zero Reading Required) */}
-        <div className="bg-white border border-surface-200/80 rounded-xl p-4 max-w-2xl mx-auto flex items-center justify-between gap-2 text-xs font-medium text-surface-600">
-          <div className="flex items-center gap-2">
-            <span className="w-5 h-5 rounded-full bg-red-100 text-red-700 font-bold flex items-center justify-center text-[11px]">1</span>
-            <span>Choose Blood Group</span>
-          </div>
-          <ArrowRight className="w-3.5 h-3.5 text-surface-300 shrink-0" />
-          <div className="flex items-center gap-2">
-            <span className="w-5 h-5 rounded-full bg-red-100 text-red-700 font-bold flex items-center justify-center text-[11px]">2</span>
-            <span>Matched in 1 Second</span>
-          </div>
-          <ArrowRight className="w-3.5 h-3.5 text-surface-300 shrink-0" />
-          <div className="flex items-center gap-2">
-            <span className="w-5 h-5 rounded-full bg-emerald-100 text-emerald-700 font-bold flex items-center justify-center text-[11px]">3</span>
-            <span>Delivered by ETA</span>
+            </button>
           </div>
         </div>
       </main>
 
-      {/* Bare Minimum Footer */}
-      <footer className="border-t border-surface-200 bg-white py-4 px-4 text-center text-xs text-surface-400">
-        <span>RaktFlow · 8 Connected Blood Banks · 50 km Network</span>
+      {/* Clean Footer */}
+      <footer className="py-4 px-4 border-t border-surface-200/80 bg-white text-center text-xs text-surface-400 font-medium z-10">
+        <span>RaktFlow · Real-Time Blood Inventory &amp; Emergency Dispatch Network</span>
       </footer>
     </div>
   );

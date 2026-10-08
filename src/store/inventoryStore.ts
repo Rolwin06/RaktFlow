@@ -1,7 +1,9 @@
 import { create } from 'zustand';
 import { seedInventory } from '@/data/seed/inventory';
 import { recomputeInventory } from '@/features/inventory/inventoryEngine';
+import { deductInventoryUnitsInDb } from '@/services/api/inventoryApi';
 import type { InventoryRecord } from '@/types/inventory';
+import type { BloodGroup, BloodComponent } from '@/types/blood';
 
 interface InventoryState {
   inventory: InventoryRecord[];
@@ -10,10 +12,12 @@ interface InventoryState {
 
   // Actions
   hydrate: (records: InventoryRecord[]) => void;
+  upsertRecord: (record: InventoryRecord) => void;
   confirmStock: (id: string) => void;
   reserveStock: (id: string, units: number) => boolean;
   releaseStock: (id: string, units: number) => void;
   deductUnits: (id: string, units: number) => void;
+  deductStockByDetails: (bankId: string, bloodGroup: BloodGroup, component: BloodComponent, units: number) => Promise<void>;
   addUnits: (bankId: string, bloodGroup: string, component: string, units: number) => void;
   resetInventory: () => void;
 }
@@ -25,6 +29,18 @@ export const useInventoryStore = create<InventoryState>((set, get) => ({
   setSelectedInventory: (record) => set({ selectedInventory: record }),
 
   hydrate: (records) => set({ inventory: records }),
+
+  upsertRecord: (record) => {
+    set((state) => {
+      const idx = state.inventory.findIndex((item) => item.id === record.id);
+      if (idx >= 0) {
+        const next = [...state.inventory];
+        next[idx] = recomputeInventory(record);
+        return { inventory: next };
+      }
+      return { inventory: [recomputeInventory(record), ...state.inventory] };
+    });
+  },
 
   confirmStock: (id) => {
     set((state) => ({
@@ -92,6 +108,29 @@ export const useInventoryStore = create<InventoryState>((set, get) => ({
         return inv;
       }),
     }));
+  },
+
+  deductStockByDetails: async (bankId, bloodGroup, component, units) => {
+    // 1. Primary match: bankId + bloodGroup + component
+    let item = get().inventory.find(
+      (i) => i.bankId === bankId && i.bloodGroup === bloodGroup && i.component === component
+    );
+
+    // 2. Secondary fallback match: bankId + bloodGroup (if component was different)
+    if (!item) {
+      item = get().inventory.find((i) => i.bankId === bankId && i.bloodGroup === bloodGroup);
+    }
+
+    if (item) {
+      // Deduct locally for immediate UI update
+      get().deductUnits(item.id, units);
+    }
+
+    // 3. Persist & sync with Supabase in real-time
+    const updatedRecord = await deductInventoryUnitsInDb(bankId, bloodGroup, component, units);
+    if (updatedRecord) {
+      get().upsertRecord(updatedRecord);
+    }
   },
 
   addUnits: (bankId, bloodGroup, component, units) => {
