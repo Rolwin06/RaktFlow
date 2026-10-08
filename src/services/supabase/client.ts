@@ -1,0 +1,14 @@
+import { createClient } from '@supabase/supabase-js';
+
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://demo-project.supabase.co';
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'demo-anon-key';
+
+export const isSupabaseConfigured = Boolean(
+  import.meta.env.VITE_SUPABASE_URL && import.meta.env.VITE_SUPABASE_ANON_KEY
+);
+
+/**
+ * Supabase client instance.
+ * Automatically falls back to offline/demo synthetic stores if Supabase environment variables are unset.
+ */
+export const supabase = createClient(supabaseUrl, supabaseAnonKey);
