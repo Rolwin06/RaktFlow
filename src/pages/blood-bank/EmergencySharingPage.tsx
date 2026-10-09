@@ -43,9 +43,6 @@ export const EmergencySharingPage: React.FC = () => {
         <h1 className="text-2xl font-extrabold tracking-tight text-red-900">
           Last-Option Emergency Sharing
         </h1>
-        <p className="text-xs text-red-800 leading-relaxed">
-          No viable surplus source found in network. This protocol allows breaching a facility's protected local reserve strictly upon explicit human medical director authorization.
-        </p>
       </div>
 
       <Card className="border-surface-300">
@@ -73,18 +70,6 @@ export const EmergencySharingPage: React.FC = () => {
               <span>Post-Transfer Stock:</span>
               <span>6 units (Breaches local 2-day buffer!)</span>
             </div>
-          </div>
-
-          {/* Operational Risk Warning */}
-          <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg text-xs text-amber-900 space-y-1.5">
-            <div className="font-bold flex items-center gap-1.5">
-              <AlertTriangle className="w-4 h-4 text-amber-600" />
-              Operational Vulnerability Disclosure
-            </div>
-            <p>
-              Releasing these units reduces City Blood Bank's local coverage below anticipated daily accident intake.
-              RaktFlow will automatically broadcast emergency donor replenishment alerts to compensate.
-            </p>
           </div>
 
           {/* Authorization Check */}

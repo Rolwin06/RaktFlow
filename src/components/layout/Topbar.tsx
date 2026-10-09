@@ -97,33 +97,8 @@ export const Topbar: React.FC = () => {
 
       {/* Right side: Quick Actions & Role Indicator */}
       <div className="flex items-center gap-2 sm:gap-3">
-        {/* Role Badge */}
-        <div className="hidden lg:flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold border bg-surface-50 text-surface-700 border-surface-200">
-          {isOwner ? (
-            <>
-              <Building2 className="w-3 h-3 text-red-600" />
-              <span className="text-red-700">Multi-Bank Owner</span>
-            </>
-          ) : (
-            <>
-              <ShieldCheck className="w-3 h-3 text-emerald-600" />
-              <span className="text-emerald-700">Single-Bank Operator</span>
-            </>
-          )}
-        </div>
 
-        {/* Quick stock verification CTA if in bank view */}
-        {isBankPortal && currentBank && (
-          <Button
-            size="sm"
-            variant={currentBank.freshnessStatus === 'stale' ? 'danger' : 'outline'}
-            leftIcon={<CheckCircle2 className="w-3.5 h-3.5" />}
-            onClick={handleConfirmStock}
-            className="hidden sm:inline-flex"
-          >
-            Confirm Stock
-          </Button>
-        )}
+
 
         {/* Urgent Request shortcut */}
         <Button
@@ -135,13 +110,8 @@ export const Topbar: React.FC = () => {
           Emergency Request
         </Button>
 
-        {/* User avatar + sign-out */}
-        <div className="flex items-center gap-2 pl-2 border-l border-surface-200">
-          <div className="w-7 h-7 rounded-full bg-red-100 border border-red-200 flex items-center justify-center">
-            <span className="text-[10px] font-bold text-red-700 uppercase">
-              {user?.email?.[0] ?? (isOwner ? 'O' : 'U')}
-            </span>
-          </div>
+        {/* Sign-out */}
+        <div className="flex items-center pl-2 border-l border-surface-200">
           <button
             onClick={handleSignOut}
             title="Sign out"

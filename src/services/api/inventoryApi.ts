@@ -287,3 +287,21 @@ export async function deductInventoryUnitsInDb(
 
   return null;
 }
+
+// ─── Delete Inventory Record ──────────────────────────────────────────────────
+
+export async function deleteInventoryInDb(inventoryId: string): Promise<boolean> {
+  if (!isSupabaseConfigured) return true;
+
+  try {
+    const { error } = await supabase.from('inventory').delete().eq('id', inventoryId);
+    if (error) {
+      console.error('deleteInventoryInDb error:', error);
+      return false;
+    }
+    return true;
+  } catch (err) {
+    console.error('deleteInventoryInDb error:', err);
+    return false;
+  }
+}

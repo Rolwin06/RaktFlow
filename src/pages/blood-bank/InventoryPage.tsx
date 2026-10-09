@@ -13,9 +13,10 @@ import {
 } from 'lucide-react';
 import { useNetworkStore } from '@/store/networkStore';
 import { useInventoryStore } from '@/store/inventoryStore';
-import { formatExpiryRemaining, formatTimeAgo } from '@/utils/date';
-import { getFreshnessBadge, getStockStatusBadge } from '@/utils/status';
+import { formatExpiryRemaining } from '@/utils/date';
+import { getFreshnessBadge } from '@/utils/status';
 import type { InventoryRecord } from '@/types/inventory';
+import { deleteInventoryInDb } from '@/services/api/inventoryApi';
 import { Button } from '@/components/ui/Button';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
 import { Modal } from '@/components/ui/Modal';
@@ -26,9 +27,10 @@ import { AddInventoryModal } from '@/components/blood/AddInventoryModal';
 
 export const InventoryPage: React.FC = () => {
   const { bloodBanks, currentBankId, confirmBankStock } = useNetworkStore();
-  const { inventory, confirmStock } = useInventoryStore();
+  const { inventory, confirmStock, removeRecord } = useInventoryStore();
 
   const [selectedRecord, setSelectedRecord] = useState<InventoryRecord | null>(null);
+  const [isDeleting, setIsDeleting] = useState<boolean>(false);
   const [filterComponent, setFilterComponent] = useState<string>('all');
   const [isAddModalOpen, setIsAddModalOpen] = useState<boolean>(false);
 
@@ -41,13 +43,18 @@ export const InventoryPage: React.FC = () => {
 
   const handleConfirmStock = (recordId: string) => {
     confirmStock(recordId);
-    if (selectedRecord && selectedRecord.id === recordId) {
-      setSelectedRecord({
-        ...selectedRecord,
-        lastConfirmedAt: new Date().toISOString(),
-        confidenceScore: 98,
-        freshnessStatus: 'fresh',
-      });
+  };
+
+  const handleDelete = async () => {
+    if (!selectedRecord) return;
+    setIsDeleting(true);
+    const success = await deleteInventoryInDb(selectedRecord.id);
+    setIsDeleting(false);
+    if (success) {
+      removeRecord(selectedRecord.id);
+      setSelectedRecord(null);
+    } else {
+      alert('Failed to delete record from Supabase. Check console.');
     }
   };
 
@@ -64,9 +71,7 @@ export const InventoryPage: React.FC = () => {
               {currentBank.shortName}
             </span>
           </div>
-          <p className="text-xs text-surface-500 mt-1">
-            Real-time multi-unit ledger calculating untouchable protected reserves versus safe transferable network stock.
-          </p>
+
         </div>
 
         <div className="flex items-center gap-2.5">
@@ -210,9 +215,9 @@ export const InventoryPage: React.FC = () => {
                       ) : (
                         <button
                           onClick={() => setSelectedRecord(item)}
-                          className="px-2.5 py-1 text-[11px] font-medium text-surface-600 hover:text-surface-900 hover:bg-surface-100 rounded cursor-pointer"
+                          className="px-2.5 py-1 text-[11px] font-bold text-rose-600 hover:text-white hover:bg-rose-600 border border-transparent hover:border-rose-700 rounded transition-colors cursor-pointer"
                         >
-                          Inspect
+                          Remove
                         </button>
                       )}
                     </td>
@@ -224,93 +229,39 @@ export const InventoryPage: React.FC = () => {
         </div>
       </Card>
 
-      {/* INVENTORY DETAIL MODAL / DRAWER */}
+      {/* REMOVE INVENTORY MODAL */}
       {selectedRecord && (
         <Modal
           isOpen={true}
           onClose={() => setSelectedRecord(null)}
-          title={`${selectedRecord.bloodGroup} ${selectedRecord.component.toUpperCase()} ALLOCATION`}
-          description={`Facility: ${currentBank.name} · Ledger ID: ${selectedRecord.id}`}
-          maxWidth="lg"
+          title="Remove Inventory Record"
+          description={`Are you sure you want to permanently delete the ${selectedRecord.bloodGroup} ${selectedRecord.component} record from the system?`}
+          maxWidth="sm"
           footer={
-            <div className="flex items-center justify-between w-full">
-              <span className="text-xs text-surface-400 font-mono">
-                Updated {formatTimeAgo(selectedRecord.updatedAt)}
-              </span>
-              <div className="flex items-center gap-2">
-                <Button variant="outline" size="sm" onClick={() => setSelectedRecord(null)}>
-                  Close
-                </Button>
-                <Button
-                  variant="primary"
-                  size="sm"
-                  leftIcon={<CheckCircle2 className="w-3.5 h-3.5" />}
-                  onClick={() => handleConfirmStock(selectedRecord.id)}
-                >
-                  Confirm Current Stock
-                </Button>
-              </div>
+            <div className="flex items-center justify-end w-full gap-2">
+              <Button variant="outline" size="sm" onClick={() => setSelectedRecord(null)} disabled={isDeleting}>
+                Cancel
+              </Button>
+              <Button
+                variant="danger"
+                size="sm"
+                onClick={handleDelete}
+                disabled={isDeleting}
+              >
+                {isDeleting ? 'Removing...' : 'Confirm Remove'}
+              </Button>
             </div>
           }
         >
-          <div className="space-y-6">
-            {/* Visual Stock Allocation Bar */}
-            <div className="bg-surface-50 p-4 rounded-xl border border-surface-200 space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-bold uppercase tracking-wider text-surface-700">
-                  Total Reported Inventory: {selectedRecord.availableUnits} Units
-                </span>
-                <span className="text-xs font-mono text-emerald-700 font-bold">
-                  {selectedRecord.transferableUnits} Safe for Redistribution
-                </span>
-              </div>
-
-              <ProtectedStockBar
-                available={selectedRecord.availableUnits}
-                reserved={selectedRecord.reservedUnits}
-                protectedUnits={selectedRecord.protectedUnits}
-                transferable={selectedRecord.transferableUnits}
-              />
-            </div>
-
-            {/* Formula Explanation Card */}
-            <div className="text-xs bg-white p-3.5 rounded-lg border border-surface-200/80 font-mono space-y-1.5">
-              <div className="text-surface-400 uppercase text-[10px] font-bold">RaktFlow Mathematical Formula</div>
-              <div className="text-surface-800">
-                <strong>Protected Stock</strong> = (Daily Usage {selectedRecord.averageDailyUsage} × 2d Window) × 1.2 Buffer = <strong>{selectedRecord.protectedUnits} units</strong>
-              </div>
-              <div className="text-surface-800">
-                <strong>Transferable Stock</strong> = {selectedRecord.availableUnits} Avail - {selectedRecord.reservedUnits} Rsvd - {selectedRecord.protectedUnits} Prot = <strong className="text-emerald-700">{selectedRecord.transferableUnits} units</strong>
-              </div>
-            </div>
-
-            {/* Supply Health Stats */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs font-mono">
-              <div className="p-3 bg-surface-50 rounded border border-surface-200">
-                <span className="text-surface-500 text-[10px] block uppercase">Daily Usage</span>
-                <span className="text-base font-bold text-surface-900 mt-0.5 block">
-                  {selectedRecord.averageDailyUsage} /day
-                </span>
-              </div>
-              <div className="p-3 bg-surface-50 rounded border border-surface-200">
-                <span className="text-surface-500 text-[10px] block uppercase">Daily Intake</span>
-                <span className="text-base font-bold text-surface-900 mt-0.5 block">
-                  {selectedRecord.averageDailyDonations} /day
-                </span>
-              </div>
-              <div className="p-3 bg-surface-50 rounded border border-surface-200">
-                <span className="text-surface-500 text-[10px] block uppercase">Coverage</span>
-                <span className="text-base font-bold text-surface-900 mt-0.5 block">
-                  {selectedRecord.daysOfStock} days
-                </span>
-              </div>
-              <div className="p-3 bg-surface-50 rounded border border-surface-200">
-                <span className="text-surface-500 text-[10px] block uppercase">Demand Trend</span>
-                <span className="text-base font-bold text-emerald-600 mt-0.5 flex items-center gap-1">
-                  <TrendingUp className="w-3.5 h-3.5" />
-                  +{selectedRecord.demandTrend}%
-                </span>
-              </div>
+          <div className="space-y-4">
+            <div className="bg-rose-50 p-4 rounded-xl border border-rose-200 text-sm text-rose-800">
+              <p className="font-semibold mb-1 flex items-center gap-2">
+                <AlertTriangle className="w-4 h-4" />
+                Warning
+              </p>
+              <p>
+                This action will delete the record from the <strong>{currentBank.name}</strong> inventory ledger and remove it from Supabase. This cannot be undone.
+              </p>
             </div>
           </div>
         </Modal>

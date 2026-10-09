@@ -19,6 +19,7 @@ interface InventoryState {
   deductUnits: (id: string, units: number) => void;
   deductStockByDetails: (bankId: string, bloodGroup: BloodGroup, component: BloodComponent, units: number) => Promise<void>;
   addUnits: (bankId: string, bloodGroup: string, component: string, units: number) => void;
+  removeRecord: (id: string) => void;
   resetInventory: () => void;
 }
 
@@ -145,6 +146,13 @@ export const useInventoryStore = create<InventoryState>((set, get) => ({
         }
         return inv;
       }),
+    }));
+  },
+
+  removeRecord: (id) => {
+    set((state) => ({
+      inventory: state.inventory.filter((inv) => inv.id !== id),
+      selectedInventory: state.selectedInventory?.id === id ? null : state.selectedInventory,
     }));
   },
 

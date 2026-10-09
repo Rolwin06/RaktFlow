@@ -56,9 +56,7 @@ export const DonorFallbackPage: React.FC = () => {
         <h1 className="text-2xl font-extrabold tracking-tight">
           Volunteer Donor Outreach
         </h1>
-        <p className="text-xs text-red-100 max-w-xl mt-1 leading-relaxed">
-          When blood bank stocks are depleted, RaktFlow scans volunteer donor databases to broadcast anonymous emergency alerts without compromising personal contact details.
-        </p>
+
 
         <div className="grid grid-cols-3 gap-3 mt-6 pt-4 border-t border-red-500/60 font-mono text-center">
           <div>

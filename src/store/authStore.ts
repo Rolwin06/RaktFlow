@@ -19,6 +19,7 @@ interface AuthState {
   assignedBankId: string | null;
   isLoading: boolean;
   error: string | null;
+  isDemoSession: boolean;
 
   // Actions
   setUserRole: (role: UserRole, assignedBankId?: string | null) => void;
@@ -40,6 +41,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   assignedBankId: localStorage.getItem(STORAGE_BANK_KEY) || 'bank-001',
   isLoading: true,
   error: null,
+  isDemoSession: false,
 
   setUserRole: (role, assignedBankId = null) => {
     localStorage.setItem(STORAGE_ROLE_KEY, role);
@@ -52,11 +54,31 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   // ── Initialize — call once at app root to subscribe to Supabase auth changes ──
   initialize: () => {
-    // Get initial session
+    // If a demo session is already active, skip Supabase session check
+    if (get().isDemoSession && get().user) {
+      set({ isLoading: false });
+      // Still subscribe but guard against null wipe
+      const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+        // Never wipe a demo session from a Supabase null event
+        if (!session && get().isDemoSession) return;
+        if (session?.user) {
+          const metadata = session.user.user_metadata || {};
+          const role = (metadata.role as UserRole) || get().userRole || 'operator';
+          const bankId = metadata.assigned_bank_id || get().assignedBankId || 'bank-001';
+          localStorage.setItem(STORAGE_ROLE_KEY, role);
+          localStorage.setItem(STORAGE_BANK_KEY, bankId);
+          useNetworkStore.getState().setCurrentBankId(bankId);
+          set({ session, user: session.user, userRole: role, assignedBankId: bankId, isLoading: false, isDemoSession: false });
+        }
+      });
+      return () => subscription.unsubscribe();
+    }
+
+    // Get initial Supabase session
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session?.user) {
         const metadata = session.user.user_metadata || {};
-        const role = (metadata.role as UserRole) || get().userRole || 'owner';
+        const role = (metadata.role as UserRole) || get().userRole || 'operator';
         const bankId = metadata.assigned_bank_id || get().assignedBankId || 'bank-001';
         
         localStorage.setItem(STORAGE_ROLE_KEY, role);
@@ -69,17 +91,26 @@ export const useAuthStore = create<AuthState>((set, get) => ({
           userRole: role,
           assignedBankId: bankId,
           isLoading: false,
+          isDemoSession: false,
         });
       } else {
-        set({ session: null, user: null, isLoading: false });
+        // Only clear user if not a demo session
+        if (!get().isDemoSession) {
+          set({ session: null, user: null, isLoading: false });
+        } else {
+          set({ isLoading: false });
+        }
       }
     });
 
     // Subscribe to future auth state changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      // Never overwrite a demo session with a Supabase null event
+      if (!session && get().isDemoSession) return;
+
       if (session?.user) {
         const metadata = session.user.user_metadata || {};
-        const role = (metadata.role as UserRole) || get().userRole || 'owner';
+        const role = (metadata.role as UserRole) || get().userRole || 'operator';
         const bankId = metadata.assigned_bank_id || get().assignedBankId || 'bank-001';
 
         localStorage.setItem(STORAGE_ROLE_KEY, role);
@@ -92,6 +123,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
           userRole: role,
           assignedBankId: bankId,
           isLoading: false,
+          isDemoSession: false,
         });
       } else {
         set({ session: null, user: null, isLoading: false });
@@ -213,7 +245,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       id: `demo-user-${role}-${targetBankId}`,
       app_metadata: {},
       user_metadata: {
-        full_name: role === 'owner' ? 'Dr. Rolwin (Multi-Bank Director)' : 'Operator (Assigned Facility)',
+        full_name: role === 'owner' ? 'Dr. Rolwin (Multi-Bank Director)' : 'Demo Operator',
         role,
         assigned_bank_id: targetBankId,
       },
@@ -225,6 +257,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       updated_at: new Date().toISOString(),
     };
 
+    // isDemoSession=true prevents Supabase onAuthStateChange(null) from wiping this mock user
     set({
       user: mockUser,
       session: {
@@ -238,14 +271,18 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       assignedBankId: targetBankId,
       isLoading: false,
       error: null,
+      isDemoSession: true,
     });
   },
 
   // ── Sign Out ──────────────────────────────────────────────────────────────
   signOut: async () => {
     set({ isLoading: true });
-    await supabase.auth.signOut();
-    set({ user: null, session: null, isLoading: false });
+    const { isDemoSession } = useAuthStore.getState();
+    if (!isDemoSession) {
+      await supabase.auth.signOut();
+    }
+    set({ user: null, session: null, isLoading: false, isDemoSession: false });
   },
 
   clearError: () => set({ error: null }),
